@@ -1,1 +1,1122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>静事本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
+        body {
+            background: radial-gradient(circle at 10% 30%, #f9fafc, #eef2f8);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            padding: 28px 20px;
+            min-height: 100vh;
+            color: #1a2f3f;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: -20%;
+            left: -20%;
+            width: 140%;
+            height: 140%;
+            background: radial-gradient(ellipse, rgba(200, 220, 250, 0.3) 0%, rgba(255,255,245,0) 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .security-banner {
+            background: #fef7e0;
+            border-left: 6px solid #f5b042;
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .security-banner code {
+            background: #fff1d6;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-family: monospace;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .calendar-panel {
+            flex: 1.2;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            padding: 1.5rem 1.2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255,255,240,0.6);
+        }
+        .cal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.6rem;
+            flex-wrap: wrap;
+        }
+        .month-year {
+            font-size: 1.6rem;
+            font-weight: 670;
+            background: linear-gradient(125deg, #1f5779, #3883aa);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .nav-btn, .today-btn {
+            background: rgba(255,255,245,0.8);
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        .today-btn {
+            width: auto;
+            padding: 0 16px;
+        }
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            margin-bottom: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6f95b3;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+        .cal-day {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.1s;
+            background: rgba(245, 250, 255, 0.5);
+            position: relative;
+        }
+        .cal-day.selected {
+            background: #2c7cb6;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 6px 12px rgba(44,124,182,0.2);
+        }
+        .cal-day.other-month {
+            color: #b7cee4;
+        }
+        .task-dot {
+            width: 6px;
+            height: 6px;
+            background: #f3a257;
+            border-radius: 10px;
+            position: absolute;
+            bottom: 6px;
+        }
+
+        .todo-panel {
+            flex: 1.8;
+            min-width: 380px;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .tab-bar {
+            display: flex;
+            border-bottom: 2px solid #eef2f8;
+            background: #ffffff;
+            padding: 0 1.5rem;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 1rem 1.2rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #7f9bb5;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn.active {
+            color: #2c7cb6;
+            border-bottom: 3px solid #2c7cb6;
+            margin-bottom: -2px;
+        }
+        .tab-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+        .tab-content.active {
+            display: flex;
+        }
+        .todo-header {
+            padding: 1rem 1.5rem 0.5rem 1.5rem;
+            background: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .history-btn {
+            background: #eef3fc;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 60px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #2c6e96;
+        }
+        .selected-date-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .selected-date-title {
+            font-size: 1.5rem;
+            font-weight: 680;
+            background: linear-gradient(135deg, #1f5e7e, #2c6e96);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .date-weekday {
+            font-size: 0.8rem;
+            background: #eef3fc;
+            padding: 4px 12px;
+            border-radius: 40px;
+            color: #3a6b8f;
+        }
+        .add-area {
+            padding: 0.8rem 1.5rem;
+            background: #fff;
+            border-bottom: 1px solid #f0f4fa;
+        }
+        .add-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+        .add-row input[type="text"] {
+            flex: 2;
+            min-width: 160px;
+            padding: 12px 16px;
+            border: 1px solid #e2edf6;
+            border-radius: 60px;
+            font-size: 0.9rem;
+        }
+        .icon-selector {
+            display: flex;
+            gap: 6px;
+            background: #f8fafd;
+            padding: 4px 10px;
+            border-radius: 60px;
+            border: 1px solid #e2edf6;
+        }
+        .icon-option {
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 40px;
+        }
+        .icon-option.selected-icon {
+            background: #e6f0f9;
+            box-shadow: inset 0 0 0 1px #9bc1db;
+        }
+        .reminder-time {
+            flex: 1;
+            min-width: 160px;
+            padding: 8px 12px;
+            border-radius: 60px;
+            border: 1px solid #e2edf6;
+        }
+        .add-btn {
+            background: linear-gradient(110deg, #2f7ea8, #236b90);
+            border: none;
+            color: white;
+            padding: 0 22px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .current-todo-section {
+            padding: 0 1.5rem;
+            max-height: 320px;
+            overflow-y: auto;
+            border-bottom: 1px solid #eff3f8;
+        }
+        .overdue-section {
+            background: #fffbf5;
+            border-radius: 1.2rem;
+            margin: 0.8rem 1.5rem 1.5rem;
+            padding: 0.6rem;
+        }
+        .overdue-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0 0.6rem 0.6rem;
+            color: #c06a42;
+            border-bottom: 1px dashed #ffe0c4;
+        }
+
+        /* ========= 周期规则列表样式：强制一行，分割线 ========= */
+        .rules-container {
+            padding: 1.2rem 1.5rem;
+            flex: 1;
+        }
+        .rule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9edf2;  /* 分割线 */
+            gap: 12px;
+        }
+        /* 规则信息容器：强制一行，允许滚动 */
+        .rule-info {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 12px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: thin;
+            flex: 1;
+        }
+        .rule-info::-webkit-scrollbar {
+            height: 4px;
+        }
+        .rule-badge {
+            background: #eef3fc;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .rule-info strong {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .rule-info span:first-child {
+            flex-shrink: 0;
+        }
+        .del-rule-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #b0c4de;
+            flex-shrink: 0;
+            margin-left: 8px;
+            transition: 0.2s;
+        }
+        .del-rule-btn:hover {
+            color: #e0675c;
+        }
+        .add-rule-btn {
+            background: #eef3fc;
+            border: none;
+            border-radius: 60px;
+            padding: 10px 20px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+        .empty-rules {
+            text-align: center;
+            padding: 2rem;
+            color: #9fb8cf;
+        }
+
+        /* 待办卡片通用样式 */
+        .todo-item, .overdue-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #ffffff;
+            padding: 8px 14px;
+            margin-bottom: 8px;
+            border-radius: 60px;
+            border: 1px solid #ecf3f9;
+            flex-wrap: wrap;
+        }
+        .todo-item.completed {
+            background: #f5f9fe;
+            opacity: 0.85;
+        }
+        .todo-icon { font-size: 1.2rem; min-width: 28px; text-align: center; }
+        .todo-text { flex: 2; font-size: 0.92rem; word-break: break-word; }
+        .completed .todo-text { text-decoration: line-through; color: #8aaac7; }
+        .completion-badge, .reminder-badge {
+            font-size: 0.65rem;
+            background: #eef3fc;
+            border-radius: 30px;
+            padding: 2px 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .todo-check { width: 18px; height: 18px; accent-color: #2c7cb6; cursor: pointer; }
+        .delete-todo, .edit-icon-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 28px;
+            border-radius: 30px;
+            color: #90b0cb;
+        }
+        .empty-tip {
+            text-align: center;
+            padding: 1.2rem;
+            color: #9fb8cf;
+            font-size: 0.8rem;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 2rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .history-table th, .history-table td {
+            border-bottom: 1px solid #eef2f8;
+            padding: 10px 6px;
+            text-align: left;
+        }
+        .close-modal {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-top: 1rem;
+            color: #8baec9;
+        }
+        @media (max-width: 780px) {
+            .add-row { flex-direction: column; align-items: stretch; }
+            .rule-info { gap: 8px; }
+            .rule-badge { font-size: 0.7rem; padding: 2px 8px; }
+            .rule-item { flex-wrap: wrap; }  /* 小屏幕允许换行，但保留分割线清晰 */
+        }
+        /* 在小屏幕上确保规则行不溢出，但为了体验保持原有换行，但规则信息依然滚动 */
+        @media (max-width: 640px) {
+            .rule-item {
+                flex-wrap: wrap;
+            }
+            .del-rule-btn {
+                margin-left: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div id="securityBanner" class="security-banner" style="display: none;">
+        ⚠️ 提醒功能需要安全环境。请使用本地服务器打开（如 <code>python -m http.server 8080</code> 然后访问 http://localhost:8080），否则通知无法弹出。
+        <button id="dismissBanner">知道了</button>
+    </div>
+
+    <div class="dashboard">
+        <div class="calendar-panel">
+            <div class="cal-header">
+                <div class="month-year" id="monthYearDisplay">--年 一月</div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="nav-btn" id="prevMonthBtn">←</button>
+                    <button class="today-btn" id="todayBtn">📅 今天</button>
+                    <button class="nav-btn" id="nextMonthBtn">→</button>
+                </div>
+            </div>
+            <div class="weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+            <div style="font-size: 11px; text-align: center; margin-top: 18px; color: #89a9c5;">📌 点击日期切换 · 带小圆点表示有任务</div>
+        </div>
+
+        <div class="todo-panel">
+            <div class="tab-bar">
+                <button class="tab-btn active" data-tab="today">📋 今日待办</button>
+                <button class="tab-btn" data-tab="rules">🔄 周期任务</button>
+            </div>
+
+            <div id="tab-today" class="tab-content active">
+                <div class="todo-header">
+                    <div class="selected-date-wrap">
+                        <span class="selected-date-title" id="selectedDateTitle"></span>
+                        <span class="date-weekday" id="selectedWeekday"></span>
+                    </div>
+                    <button class="history-btn" id="historyBtn">📜 历史记录</button>
+                </div>
+                <div class="add-area">
+                    <div class="add-row">
+                        <input type="text" id="todoInput" placeholder="写一件重要的事..." autocomplete="off">
+                        <div class="icon-selector" id="iconSelector"></div>
+                        <button class="add-btn" id="addTodoBtn">+ 添加</button>
+                    </div>
+                    <div class="add-row">
+                        <input type="datetime-local" id="reminderTimeInput" class="reminder-time" step="60">
+                        <span style="font-size:0.7rem; color:#869fbb;">⏰ 单次提醒时间 (选填)</span>
+                    </div>
+                </div>
+                <div class="current-todo-section">
+                    <ul class="todo-list" id="todoListContainer"></ul>
+                </div>
+                <div class="overdue-section">
+                    <div class="overdue-title">⏳ 遗留未关闭 · 逾期待办</div>
+                    <ul class="overdue-list" id="overdueListContainer"></ul>
+                </div>
+            </div>
+
+            <div id="tab-rules" class="tab-content">
+                <div class="rules-container">
+                    <div id="ruleListArea">加载中...</div>
+                    <button class="add-rule-btn" id="addRuleBtn">+ 新建周期任务</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>✅ 今日事 今日毕~</footer>
+</div>
+
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <button class="close-modal" id="closeModalBtn">&times;</button>
+        <h3>📋 已完成任务记录 (含闭环时间)</h3>
+        <div id="historyList"></div>
+    </div>
+</div>
+
+<script>
+    // ---------- 数据 ----------
+    let todosDB = {};
+    let recurringRules = [];
+    let currentSelectedDate = new Date();
+    let currentCalendarYear = currentSelectedDate.getFullYear();
+    let currentCalendarMonth = currentSelectedDate.getMonth();
+    let selectedIcon = "📌";
+    const icons = ["📌","✅","🚀","💡","🎯","📅","🕒","💪","🎨","📝"];
+
+    function formatYMD(date) {
+        let y = date.getFullYear();
+        let m = String(date.getMonth() + 1).padStart(2, '0');
+        let d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+    function getLocalDateKey(date) { return formatYMD(date); }
+    function getTodayKey() { return formatYMD(new Date()); }
+    function formatDateTime(iso) { if (!iso) return ''; return new Date(iso).toLocaleString(); }
+
+    function saveAll() {
+        localStorage.setItem('todos_complete_v8', JSON.stringify(todosDB));
+        localStorage.setItem('recurring_rules_v8', JSON.stringify(recurringRules));
+    }
+    function loadAll() {
+        const storedTodos = localStorage.getItem('todos_complete_v8');
+        if (storedTodos) { try { todosDB = JSON.parse(storedTodos); } catch(e) {} }
+        const storedRules = localStorage.getItem('recurring_rules_v8');
+        if (storedRules) { try { recurringRules = JSON.parse(storedRules); } catch(e) {} }
+        if (!recurringRules.length) {
+            recurringRules.push({
+                id: Date.now(),
+                name: "工作打卡",
+                timeStr: "18:00",
+                daysOfWeek: [1,2,3,4,5],
+                taskText: "🏢 工作打卡 · 完成日报",
+                icon: "💼",
+                reminderWindowMin: 60,
+                reminderIntervalMin: 30,
+                lastRemindTime: null,
+                lastGenDate: ""
+            });
+            saveAll();
+        }
+        for (let key in todosDB) {
+            todosDB[key].forEach(t => {
+                if (!t.createdAt) t.createdAt = new Date().toISOString();
+                if (t.completedAt === undefined) t.completedAt = null;
+                if (t.remindedAgain === undefined) t.remindedAgain = false;
+                if (t.lastRemindTime === undefined) t.lastRemindTime = null;
+            });
+        }
+        recurringRules.forEach(r => {
+            if (r.reminderIntervalMin === undefined) r.reminderIntervalMin = 0;
+            if (r.lastRemindTime === undefined) r.lastRemindTime = null;
+        });
+    }
+
+    function sendNotification(title, body) {
+        if (!("Notification" in window)) return;
+        if (Notification.permission === "granted") {
+            new Notification(title, { body: body });
+        } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(perm => {
+                if (perm === "granted") new Notification(title, { body });
+            });
+        }
+    }
+
+    function generateRecurringTasks() {
+        const now = new Date();
+        const todayKey = getLocalDateKey(now);
+        const currentTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        const todayWeekday = now.getDay();
+        for (let rule of recurringRules) {
+            if (!rule.daysOfWeek.includes(todayWeekday)) continue;
+            if (rule.timeStr <= currentTimeStr) {
+                if (rule.lastGenDate === todayKey) continue;
+                if (!todosDB[todayKey]) todosDB[todayKey] = [];
+                const alreadyExists = todosDB[todayKey].some(t => t.ruleId === rule.id);
+                if (!alreadyExists) {
+                    const newTask = {
+                        id: Date.now() + Math.random() * 10000,
+                        text: rule.taskText,
+                        completed: false,
+                        icon: rule.icon || "📌",
+                        remindTime: `${todayKey}T${rule.timeStr}`,
+                        reminded: false,
+                        remindedAgain: false,
+                        lastRemindTime: null,
+                        completedAt: null,
+                        createdAt: new Date().toISOString(),
+                        ruleId: rule.id
+                    };
+                    todosDB[todayKey].push(newTask);
+                    rule.lastGenDate = todayKey;
+                    saveAll();
+                }
+            }
+        }
+        saveAll();
+    }
+
+    function checkRecurringOverdueReminder() {
+        const now = new Date();
+        const nowTimestamp = now.getTime();
+        for (let dateKey in todosDB) {
+            for (let todo of todosDB[dateKey]) {
+                if (todo.completed) continue;
+                if (todo.ruleId && todo.remindTime) {
+                    const rule = recurringRules.find(r => r.id === todo.ruleId);
+                    if (!rule) continue;
+                    const remindDateTime = new Date(todo.remindTime);
+                    const remindTimestamp = remindDateTime.getTime();
+                    const windowMs = (rule.reminderWindowMin || 60) * 60 * 1000;
+                    if (nowTimestamp > remindTimestamp + windowMs) {
+                        const intervalMin = rule.reminderIntervalMin || 0;
+                        if (intervalMin <= 0) {
+                            if (!todo.remindedAgain) {
+                                sendNotification(`🔔 周期任务超时: ${todo.text}`, `原定 ${todo.remindTime.slice(5,16)} 未完成，请及时处理`);
+                                todo.remindedAgain = true;
+                                saveAll();
+                            }
+                        } else {
+                            const lastTime = todo.lastRemindTime ? new Date(todo.lastRemindTime).getTime() : remindTimestamp + windowMs;
+                            const intervalMs = intervalMin * 60 * 1000;
+                            if (nowTimestamp - lastTime >= intervalMs) {
+                                sendNotification(`🔔 周期任务超时 (${rule.reminderIntervalMin}分钟间隔): ${todo.text}`, `仍未完成，请及时处理`);
+                                todo.lastRemindTime = new Date().toISOString();
+                                todo.remindedAgain = true;
+                                saveAll();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function checkNormalReminders() {
+        const now = new Date();
+        const nowStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        for (let key in todosDB) {
+            for (let t of todosDB[key]) {
+                if (!t.completed && t.remindTime && !t.reminded && t.remindTime <= nowStr) {
+                    sendNotification(`⏰ 待办提醒`, `${t.text} (${key})`);
+                    t.reminded = true;
+                    saveAll();
+                }
+            }
+        }
+    }
+
+    function addTodo(text, icon, remindTime) {
+        if (!text.trim()) return false;
+        const dateKey = getLocalDateKey(currentSelectedDate);
+        if (!todosDB[dateKey]) todosDB[dateKey] = [];
+        const newTodo = {
+            id: Date.now() + Math.random() * 10000,
+            text: text.trim(),
+            completed: false,
+            icon: icon,
+            remindTime: remindTime || null,
+            reminded: false,
+            remindedAgain: false,
+            lastRemindTime: null,
+            completedAt: null,
+            createdAt: new Date().toISOString(),
+            ruleId: null
+        };
+        todosDB[dateKey].push(newTodo);
+        saveAll();
+        refreshAll();
+        return true;
+    }
+
+    function toggleComplete(dateKey, todoId) {
+        const todo = todosDB[dateKey]?.find(t => t.id === todoId);
+        if (todo) {
+            todo.completed = !todo.completed;
+            if (todo.completed) todo.completedAt = new Date().toISOString();
+            else todo.completedAt = null;
+            saveAll();
+            refreshAll();
+        }
+    }
+
+    function deleteTodo(dateKey, todoId) {
+        const filtered = todosDB[dateKey]?.filter(t => t.id !== todoId) || [];
+        if (filtered.length === 0) delete todosDB[dateKey];
+        else todosDB[dateKey] = filtered;
+        saveAll();
+        refreshAll();
+    }
+
+    function renderRulesList() {
+        const container = document.getElementById('ruleListArea');
+        if (!container) return;
+        if (recurringRules.length === 0) {
+            container.innerHTML = '<div class="empty-rules">暂无周期规则，点击下方按钮添加</div>';
+            return;
+        }
+        container.innerHTML = '';
+        recurringRules.forEach(rule => {
+            const weekMap = ['日', '一', '二', '三', '四', '五', '六'];
+            const daysStr = rule.daysOfWeek.map(d => weekMap[d]).join(',');
+            const intervalText = (rule.reminderIntervalMin && rule.reminderIntervalMin > 0) ? `间隔${rule.reminderIntervalMin}分钟` : '不重复';
+            const ruleDiv = document.createElement('div');
+            ruleDiv.className = 'rule-item';
+            // 内部结构：一行显示所有信息
+            ruleDiv.innerHTML = `
+                <div class="rule-info">
+                    <span style="font-size:1.3rem;">${rule.icon || '🔄'}</span>
+                    <strong>${rule.taskText}</strong>
+                    <span class="rule-badge">⏰ ${rule.timeStr}</span>
+                    <span class="rule-badge">📅 每 ${daysStr}</span>
+                    <span class="rule-badge">⏱️ 宽限 ${rule.reminderWindowMin}分钟</span>
+                    <span class="rule-badge">🔁 ${intervalText}</span>
+                </div>
+                <button class="del-rule-btn" data-id="${rule.id}">🗑️</button>
+            `;
+            container.appendChild(ruleDiv);
+        });
+        document.querySelectorAll('.del-rule-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                recurringRules = recurringRules.filter(r => r.id !== id);
+                saveAll();
+                renderRulesList();
+            });
+        });
+    }
+
+    function addRuleDialog() {
+        let taskText = prompt("周期性任务名称", "每周总结");
+        if (!taskText) return;
+        let timeStr = prompt("触发时间 (HH:MM, 24小时制)", "18:00");
+        if (!/^\d{2}:\d{2}$/.test(timeStr)) { alert("时间格式需 HH:MM，例如 18:00"); return; }
+        let weekInput = prompt("每周几执行？输入数字(0-6)，0=周日，1=周一，...，6=周六，用逗号分隔\n例如：0,1,2,3,4,5,6 表示每天；1,2,3,4,5 表示工作日", "1,2,3,4,5");
+        let days = weekInput.split(',').map(Number).filter(n => !isNaN(n) && n >= 0 && n <= 6);
+        if (days.length === 0) { alert("未选择有效星期，将默认周一至周五"); days = [1,2,3,4,5]; }
+        let icon = prompt("图标 (emoji)", "⏰");
+        let windowMin = parseInt(prompt("超时提醒宽限分钟 (未完成则首次提醒)", "60"));
+        if (isNaN(windowMin)) windowMin = 60;
+        let intervalMin = parseInt(prompt("重复提醒间隔分钟 (0 表示不重复提醒)", "30"));
+        if (isNaN(intervalMin)) intervalMin = 0;
+        recurringRules.push({
+            id: Date.now(),
+            name: taskText,
+            timeStr: timeStr,
+            daysOfWeek: days,
+            taskText: taskText,
+            icon: icon || "📌",
+            reminderWindowMin: windowMin,
+            reminderIntervalMin: intervalMin,
+            lastRemindTime: null,
+            lastGenDate: ""
+        });
+        saveAll();
+        renderRulesList();
+    }
+
+    function renderCalendar() {
+        const year = currentCalendarYear, month = currentCalendarMonth;
+        const firstDay = new Date(year, month, 1);
+        const startWeekday = firstDay.getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const prevMonthDays = new Date(year, month, 0).getDate();
+        const grid = document.getElementById('calendarGrid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        for (let i = 0; i < 42; i++) {
+            let cellYear = year, cellMonth = month, cellDay;
+            let isOtherMonth = false;
+            if (i < startWeekday) {
+                const offset = startWeekday - i;
+                cellDay = prevMonthDays - offset + 1;
+                cellMonth = month - 1;
+                if (cellMonth < 0) { cellMonth = 11; cellYear--; }
+                isOtherMonth = true;
+            } else {
+                const dayIdx = i - startWeekday + 1;
+                if (dayIdx <= daysInMonth) cellDay = dayIdx;
+                else {
+                    cellDay = dayIdx - daysInMonth;
+                    cellMonth = month + 1;
+                    if (cellMonth > 11) { cellMonth = 0; cellYear++; }
+                    isOtherMonth = true;
+                }
+            }
+            const cellDate = new Date(cellYear, cellMonth, cellDay);
+            const cellKey = getLocalDateKey(cellDate);
+            const hasTasks = todosDB[cellKey] && todosDB[cellKey].length > 0;
+            const isSelected = (cellKey === getLocalDateKey(currentSelectedDate));
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'cal-day';
+            if (isOtherMonth) dayDiv.classList.add('other-month');
+            if (isSelected) dayDiv.classList.add('selected');
+            dayDiv.innerText = cellDay;
+            if (hasTasks) {
+                const dot = document.createElement('span');
+                dot.className = 'task-dot';
+                dayDiv.appendChild(dot);
+            }
+            dayDiv.addEventListener('click', (function(dateObj) {
+                return function() {
+                    currentSelectedDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+                    if (dateObj.getFullYear() !== currentCalendarYear || dateObj.getMonth() !== currentCalendarMonth) {
+                        currentCalendarYear = dateObj.getFullYear();
+                        currentCalendarMonth = dateObj.getMonth();
+                    }
+                    refreshAll();
+                };
+            })(cellDate));
+            grid.appendChild(dayDiv);
+        }
+        const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+        const monthYearSpan = document.getElementById('monthYearDisplay');
+        if (monthYearSpan) monthYearSpan.innerText = `${year}年 ${monthNames[month]}`;
+    }
+
+    function renderCurrentTodoList() {
+        const dateKey = getLocalDateKey(currentSelectedDate);
+        const todos = todosDB[dateKey] || [];
+        const container = document.getElementById('todoListContainer');
+        const titleSpan = document.getElementById('selectedDateTitle');
+        const weekdaySpan = document.getElementById('selectedWeekday');
+        const y = currentSelectedDate.getFullYear(), m = currentSelectedDate.getMonth()+1, d = currentSelectedDate.getDate();
+        titleSpan.innerText = `${y}.${m}.${d}`;
+        weekdaySpan.innerText = ['周日','周一','周二','周三','周四','周五','周六'][currentSelectedDate.getDay()];
+        if (!todos.length) {
+            container.innerHTML = '<li class="empty-tip">✨ 添加今日待办 ✨</li>';
+            return;
+        }
+        const sorted = [...todos].sort((a,b) => (a.completed === b.completed) ? 0 : a.completed ? 1 : -1);
+        container.innerHTML = '';
+        sorted.forEach(todo => {
+            const li = document.createElement('li');
+            li.className = 'todo-item';
+            if (todo.completed) li.classList.add('completed');
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'todo-icon';
+            iconSpan.innerText = todo.icon || '📌';
+            const chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.className = 'todo-check';
+            chk.checked = todo.completed;
+            chk.addEventListener('change', () => toggleComplete(dateKey, todo.id));
+            const textSpan = document.createElement('span');
+            textSpan.className = 'todo-text';
+            textSpan.innerText = todo.text;
+            const rightDiv = document.createElement('div');
+            rightDiv.style.display = 'flex';
+            rightDiv.style.gap = '6px';
+            if (todo.completed && todo.completedAt) {
+                const badge = document.createElement('span');
+                badge.className = 'completion-badge';
+                badge.innerHTML = `✅ ${new Date(todo.completedAt).toLocaleTimeString()}`;
+                rightDiv.appendChild(badge);
+            }
+            if (todo.remindTime) {
+                const rbadge = document.createElement('span');
+                rbadge.className = 'reminder-badge';
+                rbadge.innerHTML = `⏰ ${todo.remindTime.slice(5,16)}`;
+                rightDiv.appendChild(rbadge);
+            }
+            const editBtn = document.createElement('button');
+            editBtn.innerHTML = '✏️';
+            editBtn.className = 'edit-icon-btn';
+            editBtn.addEventListener('click', () => {
+                const newTxt = prompt('编辑任务', todo.text);
+                if (newTxt && newTxt.trim()) { todo.text = newTxt.trim(); saveAll(); refreshAll(); }
+            });
+            const delBtn = document.createElement('button');
+            delBtn.innerHTML = '🗑️';
+            delBtn.className = 'delete-todo';
+            delBtn.addEventListener('click', () => deleteTodo(dateKey, todo.id));
+            li.appendChild(iconSpan);
+            li.appendChild(chk);
+            li.appendChild(textSpan);
+            li.appendChild(rightDiv);
+            li.appendChild(editBtn);
+            li.appendChild(delBtn);
+            container.appendChild(li);
+        });
+    }
+
+    function renderOverdueTasks() {
+        const todayKey = getTodayKey();
+        const items = [];
+        for (let key in todosDB) {
+            if (key < todayKey) {
+                todosDB[key].forEach(todo => {
+                    if (!todo.completed) items.push({ dateKey: key, todo });
+                });
+            }
+        }
+        const container = document.getElementById('overdueListContainer');
+        if (!items.length) { container.innerHTML = '<li class="empty-tip">🍃 无逾期任务</li>'; return; }
+        container.innerHTML = '';
+        items.forEach(({ dateKey, todo }) => {
+            const li = document.createElement('li');
+            li.className = 'overdue-item';
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'todo-icon';
+            iconSpan.innerText = todo.icon || '📌';
+            const chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.className = 'todo-check';
+            chk.addEventListener('change', () => toggleComplete(dateKey, todo.id));
+            const textSpan = document.createElement('span');
+            textSpan.className = 'todo-text';
+            textSpan.innerText = todo.text;
+            const badge = document.createElement('span');
+            badge.className = 'reminder-badge';
+            badge.innerText = dateKey.slice(5);
+            const jumpBtn = document.createElement('button');
+            jumpBtn.innerHTML = '📅';
+            jumpBtn.className = 'edit-icon-btn';
+            jumpBtn.addEventListener('click', () => {
+                const [yy, mm, dd] = dateKey.split('-').map(Number);
+                const target = new Date(yy, mm-1, dd);
+                currentSelectedDate = target;
+                currentCalendarYear = target.getFullYear();
+                currentCalendarMonth = target.getMonth();
+                refreshAll();
+            });
+            const delBtn = document.createElement('button');
+            delBtn.innerHTML = '🗑️';
+            delBtn.className = 'delete-todo';
+            delBtn.addEventListener('click', () => deleteTodo(dateKey, todo.id));
+            li.append(iconSpan, chk, textSpan, badge, jumpBtn, delBtn);
+            container.appendChild(li);
+        });
+    }
+
+    function showHistory() {
+        const historyList = [];
+        for (let dateKey in todosDB) {
+            for (let todo of todosDB[dateKey]) {
+                if (todo.completed) {
+                    historyList.push({ date: dateKey, text: todo.text, icon: todo.icon, createdAt: todo.createdAt, completedAt: todo.completedAt });
+                }
+            }
+        }
+        historyList.sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt));
+        const container = document.getElementById('historyList');
+        if (historyList.length === 0) container.innerHTML = '<p>暂无已完成任务</p>';
+        else {
+            let html = `<table class="history-table"><thead><tr><th>任务</th><th>创建时间</th><th>完成时间</th></tr></thead><tbody>`;
+            historyList.forEach(h => {
+                html += `<tr><td>${h.icon || ''} ${h.text}</td><td>${formatDateTime(h.createdAt)}</td><td>${formatDateTime(h.completedAt)}</td></tr>`;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+        document.getElementById('historyModal').style.display = 'flex';
+    }
+
+    function refreshAll() {
+        renderCalendar();
+        renderCurrentTodoList();
+        renderOverdueTasks();
+        renderRulesList();
+    }
+
+    function initIconSelector() {
+        const container = document.getElementById('iconSelector');
+        if (!container) return;
+        container.innerHTML = '';
+        icons.forEach(ic => {
+            const span = document.createElement('span');
+            span.className = 'icon-option';
+            span.innerText = ic;
+            span.dataset.icon = ic;
+            if (ic === selectedIcon) span.classList.add('selected-icon');
+            span.addEventListener('click', () => {
+                document.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected-icon'));
+                span.classList.add('selected-icon');
+                selectedIcon = ic;
+            });
+            container.appendChild(span);
+        });
+    }
+
+    function checkSecureContext() {
+        if (!window.isSecureContext) {
+            document.getElementById('securityBanner').style.display = 'flex';
+        } else {
+            if (Notification.permission !== "granted") Notification.requestPermission();
+        }
+    }
+
+    let intervalId = null;
+    function startBackgroundTasks() {
+        if (intervalId) clearInterval(intervalId);
+        intervalId = setInterval(() => {
+            generateRecurringTasks();
+            checkRecurringOverdueReminder();
+            checkNormalReminders();
+            refreshAll();
+        }, 60000);
+    }
+
+    function bindEvents() {
+        document.getElementById('prevMonthBtn').addEventListener('click', () => {
+            let nm = currentCalendarMonth - 1, ny = currentCalendarYear;
+            if (nm < 0) { nm = 11; ny--; }
+            currentCalendarMonth = nm; currentCalendarYear = ny; refreshAll();
+        });
+        document.getElementById('nextMonthBtn').addEventListener('click', () => {
+            let nm = currentCalendarMonth + 1, ny = currentCalendarYear;
+            if (nm > 11) { nm = 0; ny++; }
+            currentCalendarMonth = nm; currentCalendarYear = ny; refreshAll();
+        });
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            const today = new Date();
+            currentSelectedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            currentCalendarYear = today.getFullYear(); currentCalendarMonth = today.getMonth();
+            refreshAll();
+        });
+        document.getElementById('addTodoBtn').addEventListener('click', () => {
+            const input = document.getElementById('todoInput');
+            const remindVal = document.getElementById('reminderTimeInput').value;
+            if (addTodo(input.value, selectedIcon, remindVal || null)) {
+                input.value = '';
+                document.getElementById('reminderTimeInput').value = '';
+            } else alert("请输入内容");
+        });
+        document.getElementById('todoInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('addTodoBtn').click(); });
+        document.getElementById('historyBtn').addEventListener('click', showHistory);
+        document.getElementById('closeModalBtn').addEventListener('click', () => { document.getElementById('historyModal').style.display = 'none'; });
+        document.getElementById('addRuleBtn').addEventListener('click', addRuleDialog);
+        document.getElementById('dismissBanner')?.addEventListener('click', () => { document.getElementById('securityBanner').style.display = 'none'; });
+        window.addEventListener('click', (e) => { if (e.target === document.getElementById('historyModal')) document.getElementById('historyModal').style.display = 'none'; });
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetTab = btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById(`tab-${targetTab}`).classList.add('active');
+                if (targetTab === 'rules') renderRulesList();
+            });
+        });
+    }
+
+    function init() {
+        loadAll();
+        initIconSelector();
+        const today = new Date();
+        currentSelectedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        currentCalendarYear = today.getFullYear(); currentCalendarMonth = today.getMonth();
+        bindEvents();
+        refreshAll();
+        checkSecureContext();
+        startBackgroundTasks();
+        generateRecurringTasks();
+    }
+    init();
+</script>
+</body>
+</html>
