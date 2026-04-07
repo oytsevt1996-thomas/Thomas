@@ -1,2 +1,2 @@
-# Thomas
-For Thomas Yang
+# 静事本
+For Thomas Yang by SEVT
